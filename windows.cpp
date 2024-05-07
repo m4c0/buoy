@@ -47,7 +47,8 @@ mno::req<wcb> mkdir(wcb dir) {
   return mno::req<wcb>{traits::move(dir)};
 }
 
-mno::req<void> find_file(wchar_t *buffer, jute::view file) {
+mno::req<FILE *> find_file(wchar_t *buffer, jute::view file,
+                           const wchar_t *mode) {
   size_t count{};
 
   wchar_t wfn[MAX_PATH + 1];
@@ -57,8 +58,11 @@ mno::req<void> find_file(wchar_t *buffer, jute::view file) {
   wcscat_s(buffer, MAX_PATH, L"\\");
   wcscat_s(buffer, MAX_PATH, wfn);
 
-  //_wfopen_s(&f, name, L"rb");
-  return {};
+  FILE *f{};
+  if (0 != _wfopen_s(&f, buffer, mode))
+    return mno::req<FILE *>::failed("Could not open save file");
+
+  return mno::req<FILE *>{f};
 }
 } // namespace
 
@@ -66,14 +70,18 @@ mno::req<hai::uptr<yoyo::reader>> buoy::open_for_reading(jute::view folder,
                                                          jute::view file) {
   return get_sg_folder()
       .fmap([&](auto &&sg) { return find_folder(sg, folder); })
-      .fmap([&](auto &&dir) { return find_file(dir.begin(), file); })
-      .fmap([] { return mno::req<hai::uptr<yoyo::reader>>::failed("TBD"); });
+      .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"rb"); })
+      .fmap([](FILE *f) {
+        return mno::req<hai::uptr<yoyo::reader>>::failed("TBD");
+      });
 }
 mno::req<hai::uptr<yoyo::writer>> buoy::open_for_writing(jute::view folder,
                                                          jute::view file) {
   return get_sg_folder()
       .fmap([&](auto &&sg) { return find_folder(sg, folder); })
       .fmap([&](auto &&dir) { return mkdir(traits::move(dir)); })
-      .fmap([&](auto &&dir) { return find_file(dir.begin(), file); })
-      .fmap([] { return mno::req<hai::uptr<yoyo::writer>>::failed("TBD"); });
+      .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"wb"); })
+      .fmap([](FILE *f) {
+        return mno::req<hai::uptr<yoyo::writer>>::failed("TBD");
+      });
 }
