@@ -1,4 +1,5 @@
 module;
+#include <direct.h>
 #include <shlobj.h>
 #include <stdio.h>
 
@@ -23,7 +24,8 @@ mno::req<pwstr> get_sg_folder() {
   return mno::req<pwstr>::failed("Could not find Saved Games folder");
 }
 
-void find_file(const pwstr &sgfld, jute::view folder, jute::view file) {
+mno::req<void> find_file(const pwstr &sgfld, jute::view folder,
+                         jute::view file) {
   size_t count{};
 
   wchar_t wfld[MAX_PATH + 1];
@@ -38,23 +40,30 @@ void find_file(const pwstr &sgfld, jute::view folder, jute::view file) {
   wcscpy_s(buffer, MAX_PATH, *sgfld);
   wcscat_s(buffer, MAX_PATH, L"\\");
   wcscat_s(buffer, MAX_PATH, wfld);
+
+  auto res = _wmkdir(buffer);
+  if (res != 0 && errno != EEXIST) {
+    return mno::req<void>::failed("Could not create folder in 'Saved Games'");
+  }
+
   wcscat_s(buffer, MAX_PATH, L"\\");
   wcscat_s(buffer, MAX_PATH, wfn);
 
   _putws(buffer);
   //_wfopen_s(&f, name, L"rb");
+  return {};
 }
 } // namespace
 
 mno::req<hai::uptr<yoyo::reader>> buoy::open_for_reading(jute::view folder,
                                                          jute::view file) {
   return get_sg_folder()
-      .map([&](auto &&sg) { find_file(sg, folder, file); })
+      .fmap([&](auto &&sg) { return find_file(sg, folder, file); })
       .fmap([] { return mno::req<hai::uptr<yoyo::reader>>::failed("TBD"); });
 }
 mno::req<hai::uptr<yoyo::writer>> buoy::open_for_writing(jute::view folder,
                                                          jute::view file) {
   return get_sg_folder()
-      .map([&](auto &&sg) { find_file(sg, folder, file); })
+      .fmap([&](auto &&sg) { return find_file(sg, folder, file); })
       .fmap([] { return mno::req<hai::uptr<yoyo::writer>>::failed("TBD"); });
 }
