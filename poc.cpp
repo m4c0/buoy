@@ -11,7 +11,7 @@ auto write() {
 auto read() {
   return buoy::open_for_reading("poc", "test.txt")
       .fmap([](auto &&r) { return r->read_u32(); })
-      .map([](auto u32) { silog::log(silog::info, "Got: %d", u32); });
+      .map([](auto u32) { silog::log(silog::info, "Got: %x", u32); });
 }
 int main() {
   write().fmap([] { return read(); }).take(silog::log_failure);
