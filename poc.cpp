@@ -14,5 +14,5 @@ auto read() {
       .map([](auto u32) { silog::log(silog::info, "Got: %d", u32); });
 }
 int main() {
-  write().fmap([] { return read(); }).take(silog::fail);
+  write().fmap([] { return read(); }).take(silog::log_failure);
 }
