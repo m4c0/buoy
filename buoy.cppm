@@ -12,3 +12,7 @@ export namespace buoy {
 mno::req<hai::uptr<yoyo::reader>> open_for_reading(jute::view);
 mno::req<hai::uptr<yoyo::writer>> open_for_writing(jute::view);
 } // namespace buoy
+
+#if LECO_TARGET_WINDOWS
+#pragma leco add_impl windows.cpp
+#endif
