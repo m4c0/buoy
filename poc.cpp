@@ -1,15 +1,7 @@
 #pragma leco tool
 
-import hai;
-import jute;
-import missingno;
+import buoy;
 import silog;
-import yoyo;
-
-namespace buoy {
-mno::req<hai::uptr<yoyo::reader>> open_for_reading(jute::view);
-mno::req<hai::uptr<yoyo::writer>> open_for_writing(jute::view);
-} // namespace buoy
 
 auto write() {
   return buoy::open_for_writing("test.txt").fmap([](auto &&r) {
