@@ -15,4 +15,8 @@ mno::req<hai::uptr<yoyo::writer>> open_for_writing(jute::view folder,
 #if LECO_TARGET_WINDOWS
 #pragma leco add_library Ole32 Shell32
 #pragma leco add_impl windows.cpp
+#elif LECO_TARGET_APPLE
+#pragma leco add_impl apple.cpp
+#elif LECO_TARGET_LINUX
+#pragma leco add_impl linux.cpp
 #endif
