@@ -66,20 +66,18 @@ mno::req<FILE *> find_file(wchar_t *buffer, jute::view file,
 }
 } // namespace
 
-mno::req<hai::uptr<yoyo::reader>> buoy::open_for_reading(jute::view folder,
-                                                         jute::view file) {
+mno::req<yoyo::file_reader> buoy::open_for_reading(jute::view folder,
+                                                   jute::view file) {
   return get_sg_folder()
       .fmap([&](auto &&sg) { return find_folder(sg, folder); })
       .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"rb"); })
-      .map([](FILE *f) { return new yoyo::file_reader{f}; })
-      .fmap([](auto *f) { return mno::req{hai::uptr<yoyo::reader>{f}}; });
+      .map([](FILE *f) { return yoyo::file_reader{f}; });
 }
-mno::req<hai::uptr<yoyo::writer>> buoy::open_for_writing(jute::view folder,
-                                                         jute::view file) {
+mno::req<yoyo::file_writer> buoy::open_for_writing(jute::view folder,
+                                                   jute::view file) {
   return get_sg_folder()
       .fmap([&](auto &&sg) { return find_folder(sg, folder); })
       .fmap([&](auto &&dir) { return mkdir(traits::move(dir)); })
       .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"wb"); })
-      .map([](FILE *f) { return new yoyo::file_writer{f}; })
-      .fmap([](auto *f) { return mno::req{hai::uptr<yoyo::writer>{f}}; });
+      .map([](FILE *f) { return yoyo::file_writer{f}; });
 }
