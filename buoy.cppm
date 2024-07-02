@@ -16,7 +16,7 @@ mno::req<yoyo::file_writer> open_for_writing(jute::view folder,
 #pragma leco add_library Ole32 Shell32
 #pragma leco add_impl windows.cpp
 #elif LECO_TARGET_APPLE
-#pragma leco add_impl apple.cpp
+#pragma leco add_impl posix objc
 #elif LECO_TARGET_LINUX
-#pragma leco add_impl linux.cpp
+#pragma leco add_impl posix linux
 #endif

@@ -1,10 +1,19 @@
-module buoy;
+module;
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
 
-mno::req<yoyo::file_reader> buoy::open_for_reading(jute::view folder,
-                                                   jute::view file) {
-  return {};
-}
-mno::req<yoyo::file_writer> buoy::open_for_writing(jute::view folder,
-                                                   jute::view file) {
-  return {};
+module buoy;
+import silog;
+
+extern "C" void buoy_get_dir(char * buf) {
+  char * env = getenv("HOME");
+  if (env == nullptr)
+    silog::fail("Could not find $HOME");
+
+  strcpy(buf, env);
+  strcat(buf, "/.local");
+  mkdir(buf, 0777);
+  strcat(buf, "/m4c0");
+  mkdir(buf, 0777);
 }

@@ -1,4 +1,3 @@
-#pragma leco add_impl objc
 module;
 #include <sys/stat.h>
 
