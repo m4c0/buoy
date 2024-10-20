@@ -4,6 +4,7 @@ module;
 #include <stdio.h>
 
 module buoy;
+import jojo;
 import traits;
 
 // https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
@@ -13,71 +14,56 @@ namespace {
 struct deleter {
   void operator()(PWSTR p) { CoTaskMemFree(p); }
 };
-
 using pwstr = hai::value_holder<PWSTR, deleter>;
-mno::req<pwstr> get_sg_folder() {
-  pwstr res{};
-  if (S_OK ==
-      SHGetKnownFolderPath(FOLDERID_SavedGames, KF_FLAG_CREATE, nullptr, &*res))
-    return mno::req<pwstr>{traits::move(res)};
 
-  return mno::req<pwstr>::failed("Could not find Saved Games folder");
-}
-
-using wcb = hai::array<wchar_t>;
-mno::req<wcb> find_folder(const pwstr &sgfld, jute::view folder) {
+void to_wide(wchar_t * wide, jute::view str) {
   size_t count{};
-
-  wchar_t wfld[MAX_PATH + 1];
-  mbstowcs_s(&count, wfld, folder.size() + 1, folder.data(), _TRUNCATE);
-  wfld[count + 1] = 0;
-
-  wcb buffer{MAX_PATH};
-  wcscpy_s(buffer.begin(), MAX_PATH, *sgfld);
-  wcscat_s(buffer.begin(), MAX_PATH, L"\\");
-  wcscat_s(buffer.begin(), MAX_PATH, wfld);
-  return mno::req<wcb>{traits::move(buffer)};
+  mbstowcs_s(&count, wide, str.size() + 1, str.data(), _TRUNCATE);
+  wide[count + 1] = 0;
 }
 
-mno::req<wcb> mkdir(wcb dir) {
-  auto res = _wmkdir(dir.begin());
-  if (res != 0 && errno != EEXIST) {
-    return mno::req<wcb>::failed("Could not create folder in 'Saved Games'");
+static bool get_fn(jute::view folder, jute::view file, char * out) {
+  pwstr sg {};
+  if (S_OK != SHGetKnownFolderPath(FOLDERID_SavedGames, KF_FLAG_CREATE, nullptr, &*sg)) {
+    buoy::on_failure("Could not find Saved Games folder");
+    return false;
   }
-  return mno::req<wcb>{traits::move(dir)};
-}
 
-mno::req<FILE *> find_file(wchar_t *buffer, jute::view file,
-                           const wchar_t *mode) {
-  size_t count{};
+  wchar_t wfld[MAX_PATH + 1] {};
+  to_wide(wfld, folder);
+  wchar_t wfn[MAX_PATH + 1] {};
+  to_wide(wfn, file);
 
-  wchar_t wfn[MAX_PATH + 1];
-  mbstowcs_s(&count, wfn, file.size() + 1, file.data(), _TRUNCATE);
-  wfn[count + 1] = 0;
+  wchar_t buffer[MAX_PATH] {};
+  wcscpy_s(buffer, MAX_PATH, *sg);
+  wcscat_s(buffer, MAX_PATH, L"\\");
+  wcscat_s(buffer, MAX_PATH, wfld);
+  if (_wmkdir(buffer) != 0 && errno != EEXIST) {
+    buoy::on_failure("Could not create folder in 'Saved Games'");
+    return false;
+  }
 
   wcscat_s(buffer, MAX_PATH, L"\\");
   wcscat_s(buffer, MAX_PATH, wfn);
 
-  FILE *f{};
-  if (0 != _wfopen_s(&f, buffer, mode))
-    return mno::req<FILE *>::failed("Could not open save file");
-
-  return mno::req<FILE *>{f};
+  size_t count {};
+  wcstombs_s(&count, out, MAX_PATH, buffer, MAX_PATH);
+  out[count + 1] = 0;
+  return true;
 }
 } // namespace
 
-mno::req<yoyo::file_reader> buoy::open_for_reading(jute::view folder,
-                                                   jute::view file) {
-  return get_sg_folder()
-      .fmap([&](auto &&sg) { return find_folder(sg, folder); })
-      .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"rb"); })
-      .map([](FILE *f) { return yoyo::file_reader{f}; });
+void buoy::read(jute::view folder, jute::view file, hai::fn<void, hai::array<char> &> callback) {
+  char fn[MAX_PATH + 1] {};
+  if (!get_fn(folder, file, fn)) return;
+
+  // TODO: handle errors
+  jojo::read(fn, nullptr, [&](auto *, hai::array<char> & data) { callback(data); });
 }
-mno::req<yoyo::file_writer> buoy::open_for_writing(jute::view folder,
-                                                   jute::view file) {
-  return get_sg_folder()
-      .fmap([&](auto &&sg) { return find_folder(sg, folder); })
-      .fmap([&](auto &&dir) { return mkdir(traits::move(dir)); })
-      .fmap([&](auto &&dir) { return find_file(dir.begin(), file, L"wb"); })
-      .map([](FILE *f) { return yoyo::file_writer{f}; });
+void buoy::write(jute::view folder, jute::view file, jute::heap data) {
+  char fn[MAX_PATH + 1] {};
+  if (!get_fn(folder, file, fn)) return;
+
+  // TODO: handle errors
+  jojo::write(fn, nullptr, data, [&](auto *) {});
 }

@@ -2,12 +2,11 @@ export module buoy;
 
 import hai;
 import jute;
-import missingno;
-import yoyo;
 
 export namespace buoy {
-  mno::req<yoyo::file_reader> open_for_reading(jute::view folder, jute::view file);
-  mno::req<yoyo::file_writer> open_for_writing(jute::view folder, jute::view file);
+  extern hai::fn<void, const char *> on_failure;
+  void read(jute::view folder, jute::view file, hai::fn<void, hai::array<char> &>);
+  void write(jute::view folder, jute::view file, jute::heap data);
 } // namespace buoy
 
 #if LECO_TARGET_WINDOWS
@@ -18,3 +17,6 @@ export namespace buoy {
 #elif LECO_TARGET_LINUX
 #pragma leco add_impl posix linux
 #endif
+
+module :private;
+hai::fn<void, const char *> buoy::on_failure {};

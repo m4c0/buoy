@@ -1,18 +1,19 @@
 #pragma leco tool
 
 import buoy;
+import jute;
 import silog;
 
-auto write() {
-  return buoy::open_for_writing("poc", "test.txt").fmap([](auto &&r) {
-    return r.write_u32(0xcafe);
-  });
-}
-auto read() {
-  return buoy::open_for_reading("poc", "test.txt")
-      .fmap([](auto &&r) { return r.read_u32(); })
-      .map([](auto u32) { silog::log(silog::info, "Got: %x", u32); });
-}
+using namespace jute::literals;
+
 int main() {
-  write().fmap([] { return read(); }).take(silog::log_failure);
+  buoy::on_failure = [] (auto msg) {
+    silog::log(silog::error, "failed: %s (might be expected for first run)", msg);
+  };
+
+  buoy::read("poc", "test2.txt", [](auto & data) {
+    silog::trace("had", jute::view { data.begin(), data.size() });
+  });
+
+  buoy::write("poc", "test2.txt", "my test works"_hs);
 }
