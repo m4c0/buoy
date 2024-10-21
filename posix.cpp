@@ -3,7 +3,7 @@ module;
 
 module buoy;
 import traits;
-import yoyo;
+import jojo;
 
 extern "C" void buoy_get_dir(char *);
 
@@ -17,13 +17,13 @@ static auto filename(jute::view folder, jute::view file) {
   return (dir + "/" + file).cstr();
 }
 
-mno::req<yoyo::file_reader> buoy::open_for_reading(jute::view folder,
-                                                   jute::view file) {
+void buoy::read(jute::view folder, jute::view file, hai::fn<void, hai::array<char> &> callback) {
   auto fn = filename(folder, file);
-  return yoyo::file_reader::open(fn.data());
+  // TODO: handle errors
+  jojo::read(fn, nullptr, [&](auto *, hai::array<char> & data) { callback(data); });
 }
-mno::req<yoyo::file_writer> buoy::open_for_writing(jute::view folder,
-                                                   jute::view file) {
+void buoy::write(jute::view folder, jute::view file, jute::heap data) {
   auto fn = filename(folder, file);
-  return yoyo::file_writer::open(fn.data());
+  // TODO: handle errors
+  jojo::write(fn, nullptr, data, [&](auto *) {});
 }
