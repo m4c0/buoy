@@ -4,6 +4,7 @@ module;
 #include <stdio.h>
 
 module buoy;
+import hay;
 import jojo;
 import traits;
 
@@ -11,11 +12,6 @@ import traits;
 // FOLDERID_SavedGames
 
 namespace {
-struct deleter {
-  void operator()(PWSTR p) { CoTaskMemFree(p); }
-};
-using pwstr = hai::value_holder<PWSTR, deleter>;
-
 void to_wide(wchar_t * wide, jute::view str) {
   size_t count{};
   mbstowcs_s(&count, wide, str.size() + 1, str.data(), _TRUNCATE);
@@ -23,8 +19,8 @@ void to_wide(wchar_t * wide, jute::view str) {
 }
 
 static bool get_fn(jute::view folder, jute::view file, char * out) {
-  pwstr sg {};
-  if (S_OK != SHGetKnownFolderPath(FOLDERID_SavedGames, KF_FLAG_CREATE, nullptr, &*sg)) {
+  hay<PWSTR, nullptr, CoTaskMemFree> sg { nullptr };
+  if (S_OK != SHGetKnownFolderPath(FOLDERID_SavedGames, KF_FLAG_CREATE, nullptr, sg)) {
     buoy::on_failure("Could not find Saved Games folder");
     return false;
   }
@@ -35,7 +31,7 @@ static bool get_fn(jute::view folder, jute::view file, char * out) {
   to_wide(wfn, file);
 
   wchar_t buffer[MAX_PATH] {};
-  wcscpy_s(buffer, MAX_PATH, *sg);
+  wcscpy_s(buffer, MAX_PATH, sg);
   wcscat_s(buffer, MAX_PATH, L"\\");
   wcscat_s(buffer, MAX_PATH, wfld);
   if (_wmkdir(buffer) != 0 && errno != EEXIST) {
