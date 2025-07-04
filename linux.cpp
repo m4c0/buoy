@@ -1,19 +1,15 @@
-module;
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 
-module buoy;
-import silog;
-
-extern "C" void buoy_get_dir(char * buf) {
+extern "C" void buoy_get_dir(char * buf, unsigned buf_sz);
   char * env = getenv("HOME");
-  if (env == nullptr)
-    silog::fail("Could not find $HOME");
+  if (env == nullptr) {
+    buf[0] = 0;
+    return;
+  }
 
-  strcpy(buf, env);
-  strcat(buf, "/.local");
-  mkdir(buf, 0777);
-  strcat(buf, "/m4c0");
+  strncpy(buf, env, buf_sz);
+  strncat(buf, "/.local", buf_sz - strlen(buf));
   mkdir(buf, 0777);
 }
