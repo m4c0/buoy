@@ -1,6 +1,4 @@
-#include <direct.h>
 #include <shlobj.h>
-#include <stdio.h>
 
 // https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
 // FOLDERID_SavedGames
